@@ -21,13 +21,15 @@ const EXAMS = [
   { date: '2026-11-12', subject: 'Fundamentos' },
   { date: '2026-11-16', subject: 'Microbiología' },
   { date: '2026-11-20', subject: 'Psicología' },
-  { date: '2026-11-25', subject: 'Inglés' }
+  { date: '2026-11-25', subject: 'Inglés' },
+  { date: '2026-12-07', subject: 'Psicología', type: 'final' }
 ];
 const examsByDate = new Map(EXAMS.map((exam) => [exam.date, exam]));
 
 function renderExamList() {
-  const list = $('#exam-list');
   EXAMS.forEach((exam) => {
+    const list = document.querySelector(`.exam-list[data-exam-month="${exam.date.slice(0, 7)}"]`);
+    if (!list) return;
     const item = document.createElement('li');
     item.dataset.examDate = exam.date;
     const date = document.createElement('time');
@@ -49,23 +51,41 @@ function argentinaDateKey(date = new Date()) {
   return `${value('year')}-${value('month')}-${value('day')}`;
 }
 
-let lastCalendarDay;
+function calendarState(date = new Date()) {
+  const today = argentinaDateKey(date);
+  const noon = Date.parse(`${today}T12:00:00-03:00`);
+  const afterNoon = date.getTime() >= noon;
+  return { today, afterNoon, key: `${today}:${afterNoon}` };
+}
+
+function nextPendingExamDate(exams, { today, afterNoon }) {
+  return exams.map((exam) => exam.date)
+    .filter((date) => date > today || (date === today && !afterNoon))
+    .sort()[0] || null;
+}
+
+let lastCalendarState;
 function updateCalendars() {
-  const today = argentinaDateKey();
-  if (today === lastCalendarDay) return;
-  lastCalendarDay = today;
+  const state = calendarState();
+  const { today, afterNoon, key } = state;
+  if (key === lastCalendarState) return;
+  lastCalendarState = key;
+  const highlightDate = nextPendingExamDate(EXAMS, state);
+  const shouldStrike = (date) => date < today || (date === today && afterNoon);
   document.querySelectorAll('.calendar-day[data-date]').forEach((day) => {
-    const past = day.dataset.date < today;
+    const past = shouldStrike(day.dataset.date);
     const current = day.dataset.date === today;
     const exam = examsByDate.get(day.dataset.date);
     day.classList.toggle('day-past', past);
     day.classList.toggle('exam-day', Boolean(exam));
+    day.classList.toggle('exam-final', exam?.type === 'final');
     if (current) day.setAttribute('aria-current', 'date');
     else day.removeAttribute('aria-current');
-    day.setAttribute('aria-label', `${day.dataset.label}${exam ? `, parcial de ${exam.subject}` : ''}${current ? ', hoy' : past ? ', día pasado' : ''}`);
+    day.setAttribute('aria-label', `${day.dataset.label}${exam ? `, ${exam.type === 'final' ? 'final' : 'parcial'} de ${exam.subject}` : ''}${current ? afterNoon ? ', hoy, fecha tachada' : ', hoy' : past ? ', día pasado' : ''}`);
   });
   document.querySelectorAll('[data-exam-date]').forEach((item) => {
-    item.classList.toggle('exam-past', item.dataset.examDate < today);
+    item.classList.toggle('exam-past', shouldStrike(item.dataset.examDate));
+    item.classList.toggle('exam-highlighted', item.dataset.examDate === highlightDate);
     if (item.dataset.examDate === today) item.setAttribute('aria-current', 'date');
     else item.removeAttribute('aria-current');
   });
