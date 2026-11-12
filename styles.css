@@ -55,3 +55,81 @@ body{padding-top:98px}.topbar{position:fixed;top:max(14px,env(safe-area-inset-to
 .topbar{width:90px;height:46px;border-radius:16px}.wordmark.monogram{width:90px;height:46px;border-radius:16px;gap:6px}.wordmark.monogram>.monogram-letter{font-size:26px}.wordmark.monogram>.monogram-heart{font-size:21px}
 
 .wordmark.monogram>.monogram-letter{font-size:29px}.wordmark.monogram>.monogram-heart{font-size:23px}
+
+
+/* Estructura compartida: misma guía izquierda y columnas estables. */
+:root{
+  --page-gutter:max(32px, calc((100vw - 1120px) / 2));
+  --section-gap:clamp(40px, 6vw, 80px);
+}
+html{scroll-padding-top:90px;scrollbar-gutter:stable}
+body{padding-top:0}
+.hero{
+  max-width:none;margin:0;min-height:100svh;
+  padding:110px var(--page-gutter) 70px;
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:var(--section-gap);align-items:center;
+}
+.hero-content{min-width:0}
+.hero .garden{position:relative;inset:auto;width:390px;max-width:100%;height:480px;margin:0 auto;z-index:0}
+.letter-section,.little-notes,.countdown-section{
+  max-width:none;margin:0;padding:90px var(--page-gutter);
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  column-gap:var(--section-gap);align-items:start;
+}
+.section-heading{padding-top:0}
+.section-heading h2,.notes-intro h2,.countdown-copy h2{margin:0 0 24px}
+.section-heading,.notes-intro,.countdown-copy,.notes-stack{min-width:0;align-self:start}
+.envelope-wrap{padding-top:16px;align-self:start}
+/* Ambas caras ocupan la misma celda: el papel siempre reserva su alto completo. */
+.note{display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:1fr;align-items:center}
+.note-front,.note-back{grid-area:1 / 1;margin-top:0;min-width:0}
+.note-back{animation:none;max-width:none}
+.note-front[aria-hidden=true],.note-back[aria-hidden=true]{visibility:hidden;pointer-events:none}
+.note-front[aria-hidden=false],.note-back[aria-hidden=false]{visibility:visible}
+/* Los rótulos no dependen del ancho de los dígitos de la tipografía. */
+.countdown{
+  display:grid;grid-template-columns:1fr 10px 1fr 10px 1fr 10px 1fr;
+  gap:10px;width:390px;max-width:100%;align-items:start;
+}
+.countdown>div{min-width:0;width:100%;text-align:center}
+.countdown strong{display:block;width:100%;height:70px;line-height:70px;text-align:center}
+.countdown span{white-space:nowrap}
+.countdown i{width:10px;text-align:center;margin:15px 0 0;line-height:40px}
+@media(max-width:800px){
+  :root{--page-gutter:27px}
+  .hero{
+    min-height:100svh;padding:100px var(--page-gutter) 42px;
+    display:flex;flex-direction:column;justify-content:center;align-items:stretch;gap:24px;
+  }
+  .hero .garden{width:310px;height:300px;margin:0 auto;flex:none}
+  .letter-section,.little-notes,.countdown-section{
+    padding:60px var(--page-gutter);grid-template-columns:minmax(0,1fr);gap:36px;
+  }
+  .envelope-wrap{padding-top:10px}
+  .countdown{width:320px;max-width:100%;grid-template-columns:1fr 7px 1fr 7px 1fr 7px 1fr;gap:5px}
+  .countdown strong{height:58px;line-height:58px}
+  .countdown i{width:7px;margin-top:9px;line-height:40px}
+}
+@media(max-width:360px){:root{--page-gutter:23px}.hero .garden{width:280px}}
+
+/* Dos meses, con los días cumplidos tachados según la fecha de Argentina. */
+.calendars{display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-start;gap:28px;min-width:0;width:100%}
+.calendars .calendar{flex:1 1 230px;min-width:0;max-width:340px;margin:16px 0 0;padding:28px 18px 20px;rotate:2deg}
+.calendars .calendar:first-child{rotate:-2deg}
+.calendars .calendar-heading>span{font-size:32px}
+.calendar-day .day-number{position:relative;z-index:1;display:grid;place-items:center;width:26px;height:26px}
+.calendar-day.day-past .day-number{opacity:.45}
+.calendar-day.day-past:after{content:'';position:absolute;width:22px;height:1.5px;background:#87947a;rotate:-32deg;z-index:2;pointer-events:none}
+.calendar-day[aria-current=date] .day-number{background:#e9d9ce;border-radius:50%;color:var(--ink);font-weight:600}
+@media(max-width:800px){.calendars{gap:28px}.calendars .calendar{flex-basis:100%;max-width:305px}}
+
+.calendar-day.exam-day .day-number{background:#e9dfed;border-radius:50%;color:#705d80}
+.calendar-day.exam-day[aria-current=date] .day-number{background:#d8c6df;color:#51445c}
+.calendar-day.exam-day:before{content:'';position:absolute;bottom:-3px;left:calc(50% - 2px);width:4px;height:4px;border-radius:50%;background:#9b7ca7}
+.exam-list-heading{font:25px/1.2 var(--hand);color:#897195;margin:24px 0 10px}
+.exam-list{list-style:none;padding:0;margin:0;font:11px/1.6 var(--sans);color:#636a5f;display:grid;gap:7px;text-align:left}
+.exam-list li{display:grid;grid-template-columns:42px minmax(0,1fr);gap:7px;align-items:baseline}
+.exam-list time{font-variant-numeric:tabular-nums;color:#897195;font-size:10px}
+.exam-list .exam-past{opacity:.5;text-decoration:line-through;text-decoration-color:#9ba28e}
+.exam-list [aria-current=date]{color:var(--ink);font-weight:600}

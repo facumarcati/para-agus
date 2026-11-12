@@ -15,8 +15,65 @@ function countdownState(now) {
   return { mode: 'waiting', days: Math.floor(seconds / 86400), hours: Math.floor(seconds % 86400 / 3600), minutes: Math.floor(seconds % 3600 / 60), seconds: seconds % 60 };
 }
 
+const EXAMS = [
+  { date: '2026-11-05', subject: 'Fundamentos' },
+  { date: '2026-11-11', subject: 'Anatomía' },
+  { date: '2026-11-12', subject: 'Fundamentos' },
+  { date: '2026-11-16', subject: 'Microbiología' },
+  { date: '2026-11-20', subject: 'Psicología' },
+  { date: '2026-11-25', subject: 'Inglés' }
+];
+const examsByDate = new Map(EXAMS.map((exam) => [exam.date, exam]));
+
+function renderExamList() {
+  const list = $('#exam-list');
+  EXAMS.forEach((exam) => {
+    const item = document.createElement('li');
+    item.dataset.examDate = exam.date;
+    const date = document.createElement('time');
+    date.dateTime = exam.date;
+    date.textContent = `${exam.date.slice(8)}/${exam.date.slice(5, 7)}`;
+    const subject = document.createElement('span');
+    subject.textContent = exam.subject;
+    item.append(date, subject);
+    list.append(item);
+  });
+}
+
+function argentinaDateKey(date = new Date()) {
+  const parts = new Intl.DateTimeFormat('en', {
+    timeZone: 'America/Argentina/Buenos_Aires',
+    year: 'numeric', month: '2-digit', day: '2-digit'
+  }).formatToParts(date);
+  const value = (type) => parts.find((part) => part.type === type).value;
+  return `${value('year')}-${value('month')}-${value('day')}`;
+}
+
+let lastCalendarDay;
+function updateCalendars() {
+  const today = argentinaDateKey();
+  if (today === lastCalendarDay) return;
+  lastCalendarDay = today;
+  document.querySelectorAll('.calendar-day[data-date]').forEach((day) => {
+    const past = day.dataset.date < today;
+    const current = day.dataset.date === today;
+    const exam = examsByDate.get(day.dataset.date);
+    day.classList.toggle('day-past', past);
+    day.classList.toggle('exam-day', Boolean(exam));
+    if (current) day.setAttribute('aria-current', 'date');
+    else day.removeAttribute('aria-current');
+    day.setAttribute('aria-label', `${day.dataset.label}${exam ? `, parcial de ${exam.subject}` : ''}${current ? ', hoy' : past ? ', día pasado' : ''}`);
+  });
+  document.querySelectorAll('[data-exam-date]').forEach((item) => {
+    item.classList.toggle('exam-past', item.dataset.examDate < today);
+    if (item.dataset.examDate === today) item.setAttribute('aria-current', 'date');
+    else item.removeAttribute('aria-current');
+  });
+}
+
 let lastMode;
 function updateCountdown() {
+  updateCalendars();
   const state = countdownState(Date.now());
   $('#days').textContent = String(state.days).padStart(2, '0');
   $('#hours').textContent = String(state.hours).padStart(2, '0');
@@ -37,6 +94,7 @@ function updateCountdown() {
     $('#countdown-status').textContent = 'Bueno, ¿qué hacemos ahora? ☀';
   }
 }
+renderExamList();
 updateCountdown();
 setInterval(updateCountdown, 1000);
 document.addEventListener('visibilitychange', () => { if (!document.hidden) updateCountdown(); });
@@ -54,8 +112,7 @@ letterButton.addEventListener('click', () => {
     letterButton.hidden = true;
     letter.classList.remove('closing');
     letter.hidden = false;
-    $('#close-letter').focus({ preventScroll: true });
-    letter.scrollIntoView({ behavior: reducedMotion.matches ? 'instant' : 'smooth', block: 'start' });
+    letter.focus({ preventScroll: true });
     opening = false;
   }, reducedMotion.matches ? 0 : 500);
 });
@@ -71,7 +128,6 @@ $('#close-letter').addEventListener('click', () => {
     letterButton.classList.add('returning');
     letterButton.setAttribute('aria-expanded', 'false');
     letterButton.focus({ preventScroll: true });
-    letterButton.scrollIntoView({ behavior: reducedMotion.matches ? 'instant' : 'smooth', block: 'center' });
     opening = false;
   }, reducedMotion.matches ? 0 : 400);
 });
@@ -83,8 +139,8 @@ document.querySelectorAll('.note').forEach((note) => {
     const open = note.getAttribute('aria-expanded') !== 'true';
     const showFace = () => {
       note.setAttribute('aria-expanded', String(open));
-      note.querySelector('.note-back').hidden = !open;
-      note.querySelector('.note-front').hidden = open;
+      note.querySelector('.note-back').setAttribute('aria-hidden', String(!open));
+      note.querySelector('.note-front').setAttribute('aria-hidden', String(open));
       note.querySelector('.note-doodle').hidden = open;
     };
     if (reducedMotion.matches) {
